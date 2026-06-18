@@ -11,6 +11,36 @@ import { Model as SmartphoneModel } from './Smartphone'
 // දැනට තියෙන Imports වලට යටින් මේක දාන්න මචන්:
 import MobileProjectsUI from './MobileProjectsUI'
 
+// ... දැනට තියෙන states ටික (isMobile, videoBlobs ආදිය) ...
+
+  // 📱 MOBILE SWIPE TRACKING STATE
+  const [touchStartY, setTouchStartY] = useState(0);
+
+  // 📱 MOBILE SWIPE HANDLERS
+  const handleTouchStart = (e) => {
+    setTouchStartY(e.touches[0].clientY);
+  };
+
+  const handleTouchEnd = (e) => {
+    if (!matrixEntered || isZoomed || isImploding) return; 
+    
+    const touchEndY = e.changedTouches[0].clientY;
+    const deltaY = touchStartY - touchEndY;
+
+    // 50px කට වඩා ඇඟිල්ලෙන් ඇද්දා නම් පේජ් එක මාරු වෙනවා
+    if (deltaY > 50) { 
+      // Swipe Up (පල්ලෙහාට ස්ක්‍රෝල් වෙනවා)
+      setActivePage((prev) => Math.min(prev + 1, 4));
+      setIsAboutExpanded(false); 
+    } else if (deltaY < -50) { 
+      // Swipe Down (උඩට ස්ක්‍රෝල් වෙනවා)
+      setActivePage((prev) => Math.max(prev - 1, 1));
+    }
+  };
+
+  const handleScroll = (e) => {
+    // ... ඔයාගේ පරණ handleScroll එක ...
+
 // ✍️ PROFILE CARD TYPEWRITER COMPONENT
 const ProfileTypewriter = ({ text, speed = 10, startTrigger }) => {
   const [displayedText, setDisplayedText] = useState('');
@@ -646,7 +676,12 @@ function App() {
   };
 
   return (
-    <div onWheel={handleScroll} style={{ position: 'relative', width: '100vw', height: '100vh', backgroundColor: '#020205', overflow: 'hidden' }}>
+        <div 
+      onWheel={handleScroll} 
+      onTouchStart={handleTouchStart} 
+      onTouchEnd={handleTouchEnd} 
+      style={{ position: 'relative', width: '100vw', height: '100vh', backgroundColor: '#020205', overflow: 'hidden' }}
+    >
       
       {/* 🌌 3D WEBGL GRAPHICS CANVAS */}
       <Canvas camera={{ position: [0, 0, 6], fov: 45 }}>
