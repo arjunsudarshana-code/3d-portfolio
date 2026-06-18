@@ -11,35 +11,7 @@ import { Model as SmartphoneModel } from './Smartphone'
 // දැනට තියෙන Imports වලට යටින් මේක දාන්න මචන්:
 import MobileProjectsUI from './MobileProjectsUI'
 
-// ... දැනට තියෙන states ටික (isMobile, videoBlobs ආදිය) ...
 
-  // 📱 MOBILE SWIPE TRACKING STATE
-  const [touchStartY, setTouchStartY] = useState(0);
-
-  // 📱 MOBILE SWIPE HANDLERS
-  const handleTouchStart = (e) => {
-    setTouchStartY(e.touches[0].clientY);
-  };
-
-  const handleTouchEnd = (e) => {
-    if (!matrixEntered || isZoomed || isImploding) return; 
-    
-    const touchEndY = e.changedTouches[0].clientY;
-    const deltaY = touchStartY - touchEndY;
-
-    // 50px කට වඩා ඇඟිල්ලෙන් ඇද්දා නම් පේජ් එක මාරු වෙනවා
-    if (deltaY > 50) { 
-      // Swipe Up (පල්ලෙහාට ස්ක්‍රෝල් වෙනවා)
-      setActivePage((prev) => Math.min(prev + 1, 4));
-      setIsAboutExpanded(false); 
-    } else if (deltaY < -50) { 
-      // Swipe Down (උඩට ස්ක්‍රෝල් වෙනවා)
-      setActivePage((prev) => Math.max(prev - 1, 1));
-    }
-  };
-
-  const handleScroll = (e) => {
-    // ... ඔයාගේ පරණ handleScroll එක ...
 
 // ✍️ PROFILE CARD TYPEWRITER COMPONENT
 const ProfileTypewriter = ({ text, speed = 10, startTrigger }) => {
@@ -574,7 +546,7 @@ function MatrixOSSwiper({ selectedProject, setSelectedProject, videoBlobs = {} }
   );
 }
 
-// 🏛️ 4. MAIN APP COMPONENT (🌟 FIXED: ALL STATES & CLEANED EFFECTS)
+// 🏛️ 4. MAIN APP COMPONENT (🌟 FIXED: GLOBAL MOBILE SWIPE ADDED)
 function App() {
   const [isHovered, setIsHovered] = useState(false);
   const [matrixEntered, setMatrixEntered] = useState(false);
@@ -598,6 +570,7 @@ function App() {
       { id: 3, path: '/videos/travel-hover.mp4' }
     ];
     
+    // සයිට් එක ලෝඩ් වෙද්දීම වීඩියෝ 3ම RAM එකට ඇදලා බ්ලොබ් යූආර්එල් (Blob URL) හදනවා මචන්
     targets.forEach(async (item) => {
       try {
         const response = await fetch(item.path);
@@ -612,38 +585,6 @@ function App() {
 
   // 📱 2. MOBILE RESPONSIVE DETECTION EFFECT
   useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-    
-    handleResize(); // මුලින්ම එක පාරක් රන් කරනවා
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  // 🌟 මේකට කෙලින්ම යටින් ඔයාගේ පරණ handleScroll ෆන්ක්ෂන් එක කිසිම වෙනසක් නැතුව තියෙන්න ඕනේ මචන්:
-
-  useEffect(() => {
-    const targets = [
-      { id: 1, path: '/videos/bottle-hover.mp4' },
-      { id: 2, path: '/videos/ecommerce-hover.mp4' },
-      { id: 3, path: '/videos/travel-hover.mp4' }
-    ];
-    
-    // සයිට් එක ලෝඩ් වෙද්දීම වීඩියෝ 3ම RAM එකට ඇදලා බ්ලොබ් යූආර්එල් (Blob URL) හදනවා මචන්
-    targets.forEach(async (item) => {
-      try {
-        const response = await fetch(item.path);
-        const blob = await response.blob();
-        const objectUrl = URL.createObjectURL(blob);
-        setVideoBlobs(prev => ({ ...prev, [item.id]: objectUrl }));
-      } catch (error) {
-        console.error("Matrix OS Video Stream Buffering Failed:", error);
-      }
-    });
-  }, []);
-
-  useEffect(() => {
     // බ්‍රවුසර් එකේ පළල 768px වඩා අඩුද කියලා නිරන්තරයෙන්ම චෙක් කරනවා මචන්
     const handleResize = () => {
       setIsMobile(window.innerWidth < 768);
@@ -654,6 +595,42 @@ function App() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // 🚀 3. 100% BULLETPROOF MOBILE SWIPE LISTENER (🌟 FIXED)
+  useEffect(() => {
+    let startY = 0;
+
+    const handleGlobalTouchStart = (e) => {
+      startY = e.touches[0].clientY;
+    };
+
+    const handleGlobalTouchEnd = (e) => {
+      if (!matrixEntered || isZoomed || isImploding) return; 
+
+      const endY = e.changedTouches[0].clientY;
+      const deltaY = startY - endY;
+
+      // 40px කට වඩා ඇද්දා නම් විතරක් පේජ් මාරු වෙනවා (ස්මූත් වෙන්න 40 කලා)
+      if (deltaY > 40) {
+        // Swipe Up (Scroll Down)
+        setActivePage((prev) => Math.min(prev + 1, 4));
+        setIsAboutExpanded(false);
+      } else if (deltaY < -40) {
+        // Swipe Down (Scroll Up)
+        setActivePage((prev) => Math.max(prev - 1, 1));
+      }
+    };
+
+    // මුළු Window එකටම ඉවෙන්ට් එක දානවා (Canvas එකෙන් බ්ලොක් කරත් මේක වැඩ)
+    window.addEventListener('touchstart', handleGlobalTouchStart, { passive: true });
+    window.addEventListener('touchend', handleGlobalTouchEnd, { passive: true });
+
+    return () => {
+      window.removeEventListener('touchstart', handleGlobalTouchStart);
+      window.removeEventListener('touchend', handleGlobalTouchEnd);
+    };
+  }, [matrixEntered, isZoomed, isImploding]);
+
+  // 🖱️ 4. PC MOUSE WHEEL SCROLL LOGIC
   const handleScroll = (e) => {
     if (!matrixEntered || isZoomed || isImploding) return; 
     if (e.deltaY > 20) {
@@ -676,10 +653,8 @@ function App() {
   };
 
   return (
-        <div 
+    <div 
       onWheel={handleScroll} 
-      onTouchStart={handleTouchStart} 
-      onTouchEnd={handleTouchEnd} 
       style={{ position: 'relative', width: '100vw', height: '100vh', backgroundColor: '#020205', overflow: 'hidden' }}
     >
       
@@ -694,13 +669,10 @@ function App() {
              activePage={activePage} 
              isImploding={isImploding} 
              isMobile={isMobile} 
-             
-             
           />
           
           {/* 📱 2. CONDITIONAL RENDERING SWITCH */}
           {isMobile ? (
-            // 🌟 1. FIXED: selectedProject ප්‍රොප් එක ස්මාර්ට්ෆෝන් කම්පෝනන්ට් එකට පාස් කලා මචන්
             <SmartphoneComponent matrixEntered={matrixEntered} activePage={activePage} onProjectSelect={setSelectedProject} selectedProject={selectedProject} />
           ) : (
             <LaptopComponent matrixEntered={matrixEntered} activePage={activePage} setIsZoomed={setIsZoomed} isZoomed={isZoomed} />
@@ -753,13 +725,10 @@ function App() {
         {/* 🍏 SCREEN 1: PROFILE ABOUT VIEW */}
         <div style={{
           position: 'absolute', 
-          // 📱 මොබයිල් නම් දකුණෙන් සහ වමෙන් 5% ගාණේ දීලා සෙන්ටර් කරනවා, PC නම් පරණ විදිහමයි මචන්
           right: isMobile ? '5%' : '10%', 
           left: isMobile ? '5%' : 'auto',
-          // 📱 ෆෝන් එකේදී මුළු කාඩ් එකම බොටම් UI එකේ නොවදින්න පොඩ්ඩක් උඩට ගන්නවා
           top: isMobile ? '2%' : '0', 
           height: '100%', 
-          // 📱 මොබයිල් එකේදී ස්ක්‍රීන් එකෙන් 90%ක්ම පළල දීලා බොක්ස් එක ලස්සනට වයිඩ් කරනවා
           width: isMobile ? '90%' : '35%', 
           opacity: (matrixEntered && activePage === 1) ? 1 : 0, 
           transform: !matrixEntered ? 'translateY(50px)' : (activePage !== 1 ? 'translateY(-200px)' : 'translateY(0)'),
@@ -774,16 +743,14 @@ function App() {
             style={{ 
               display: 'flex', flexDirection: 'column', alignItems: 'center', 
               backgroundColor: isAboutExpanded ? 'rgba(0, 255, 255, 0.05)' : 'transparent', 
-              // 📱 මොබයිල් වලට ගැලපෙන ස්මූත් පෑඩින්ග්ස් ටියුන් කලා
               padding: isMobile ? '20px 15px' : (isAboutExpanded ? '30px' : '10px'), 
               borderRadius: '20px',
               border: isAboutExpanded ? '1px solid rgba(0, 255, 255, 0.2)' : '1px solid transparent',
               cursor: 'pointer', transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)', width: '100%'
             }}
           >
-            {/* 📸 PROFILE IMAGE - (🌟 FIXED FOR MOBILE) */}
+            {/* 📸 PROFILE IMAGE */}
             <div style={{
-              // 📱 ෆොටෝ එක ෆෝන් ස්ක්‍රීන් එකට නොපෙනී යන්නේ නැති වෙන්න 160px වලට කුඩා කලා මචන්
               width: isMobile ? '160px' : '260px', 
               height: isMobile ? '160px' : '260px', 
               borderRadius: '50%', 
@@ -803,7 +770,6 @@ function App() {
               {/* 🏷️ NAME TEXT */}
               <h2 style={{ 
                 color: '#00ffff', 
-                // 📱 නම ෆෝන් එකේ ලස්සනට පේන්න ෆොන්ට් සයිස් එක ටියුන් කලා
                 fontSize: isMobile ? '1.8rem' : '2.5rem', 
                 margin: '0 0 10px 0', 
                 letterSpacing: '3px', fontFamily: 'monospace', textShadow: '0 0 15px rgba(0, 255, 255, 0.5)' 
@@ -813,7 +779,6 @@ function App() {
               {/* 📝 DESCRIPTION TEXT */}
               <p style={{ 
                 margin: '0 10px', opacity: 0.9, 
-                // 📱 මොබයිල් එකෙන් කියවන්න මාරම ලේසි වෙන සයිස් එකක් දැම්මා
                 fontSize: isMobile ? '0.95rem' : '1.1rem', 
                 lineHeight: '1.6', color: '#e0e0e0', maxWidth: '450px', fontFamily: 'system-ui' 
               }}>
@@ -865,12 +830,12 @@ function App() {
           </button>
         </div>
         
-        {/* 🌟 TRUE VIEWPORT CINEMATIC MATRIX_OS SMART SWIPER (WITH DYNAMIC BLOB INJECTION) */}
+        {/* 🌟 TRUE VIEWPORT CINEMATIC MATRIX_OS SMART SWIPER */}
         {selectedProject && (
           <MatrixOSSwiper selectedProject={selectedProject} setSelectedProject={setSelectedProject} videoBlobs={videoBlobs} />
         )}
 
-        {/* 📥 SILENT BACKGROUND VIDEO PRELOADER (🌟 INSTANT FIRST-TOUCH FIX) */}
+        {/* 📥 SILENT BACKGROUND VIDEO PRELOADER */}
         {matrixEntered && (
           <div style={{ display: 'none' }} aria-hidden="true">
             <video preload="auto" muted playsInline><source src="/videos/bottle-hover.mp4" type="video/mp4" /></video>
