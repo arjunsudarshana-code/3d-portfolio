@@ -1,44 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-
-// 🗂️ Actual technical data for each project in professional English
-const projectsData = [
-  {
-    id: 1,
-    title: "3D Interactive Bottle",
-    tagline: "Immersive WebGL Experience",
-    tags: ["Three.js", "React Three Fiber", "GLSL Shaders"],
-    summary: "An advanced 3D web experience built using React Three Fiber and Three.js. It features realistic physical refractions, custom GLSL shading systems, and HDRI lighting, all optimized for GPU acceleration. Implementation of pointer events and raycasting technology ensures a consistent 60FPS rendering speed across both mobile and desktop devices.",
-    liveLink: "https://bottle-animation-omega.vercel.app",
-    glowColor: "rgba(0, 255, 150, 0.4)",
-    bgGradient: "linear-gradient(135deg, #052e16 0%, #16a34a 100%)",
-    imageSrc: "/images/bottle-mockup.jpg",
-    videoSrc: "/videos/bottle-hover.mp4"
-  },
-  {
-    id: 2,
-    title: "AI Travel Itinerary",
-    tagline: "Smart Planner Platform",
-    tags: ["React Core", "LLM API Integration", "State Management"],
-    summary: "An intelligent travel planning platform directly integrated with an advanced Large Language Model (LLM) API. Utilizing asynchronous data pipelines and robust client-side state management (Zustand/Context), it automatically generates detailed itineraries and map views based on user preferences via real-time token streaming in just a few seconds.",
-    liveLink: "https://ai-travel-itinerary-6qzi.bolt.host/",
-    glowColor: "rgba(186, 12, 247, 0.4)",
-    bgGradient: "linear-gradient(135deg, #3b0764 0%, #a855f7 100%)",
-    imageSrc: "/images/travel-mockup.jpg",
-    videoSrc: "/videos/travel-hover.mp4"
-  },
-  {
-    id: 3,
-    title: "E-Commerce AI Admin",
-    tagline: "Next-Gen SaaS Dashboard",
-    tags: ["Laravel Architecture", "Data Pipeline", "Telemetry Charts"],
-    summary: "A Next-Gen SaaS admin panel created by bridging Laravel backend architecture with a dynamic reactive frontend. Automated data pipelines and relational schema optimizations allow for instantaneous analysis of e-commerce telemetry, leveraging AI to generate automated business insights, forecasts, and interactive charts.",
-    liveLink: "https://e-commerce-ai-admin-4e6v.bolt.host/ai-generator",
-    glowColor: "rgba(0, 150, 255, 0.4)",
-    bgGradient: "linear-gradient(135deg, #023e8a 0%, #0096c7 100%)",
-    imageSrc: "/images/ecommerce-mockup.jpg",
-    videoSrc: "/videos/ecommerce-hover.mp4"
-  }
-];
+import { supabase } from './supabaseClient'; // 👈 අපේ Supabase Client එක ඉම්පෝර්ට් කරගන්නවා
 
 // ✍️ TYPEWRITER COMPONENT
 const TypewriterText = ({ text, speed = 12 }) => {
@@ -156,15 +117,67 @@ const ProjectCard = ({ project, isHovered, onMouseEnter, onMouseLeave, onClick }
 export const LiquidCarousel = ({ isZoomed, setIsZoomed }) => {
   const [selectedProject, setSelectedProject] = useState(null);
   const [hoveredId, setHoveredId] = useState(null);
+  const [activeProject, setActiveProject] = useState(null);
   
-  // 🔄 Active Project State to maintain layout values during reverse fade-out transitions safely
-  const [activeProject, setActiveProject] = useState(projectsData[0]);
+  // 🔄 Supabase Live Data States
+  const [projectsData, setProjectsData] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // 📥 Fetch data from Supabase DB dynamically
+  useEffect(() => {
+    const fetchProjects = async () => {
+      const { data, error } = await supabase
+        .from('projects')
+        .select('*')
+        .order('id', { ascending: true });
+
+      if (error) {
+        console.error("Error fetching projects from Supabase Node:", error);
+      } else if (data) {
+        // Snake case values ටික පැරණි camelCase වලට හැඩගැස්වීම
+        const mappedData = data.map(p => ({
+          id: p.id,
+          title: p.title,
+          tagline: p.tagline,
+          tags: p.tags || [],
+          summary: p.summary,
+          liveLink: p.live_link,
+          glowColor: p.glow_color,
+          bgGradient: p.bg_gradient,
+          imageSrc: p.image_path,
+          videoSrc: p.video_path
+        }));
+
+        setProjectsData(mappedData);
+        if (mappedData.length > 0) {
+          setActiveProject(mappedData[0]);
+        }
+      }
+      setLoading(false);
+    };
+
+    fetchProjects();
+  }, []);
 
   useEffect(() => {
     if (selectedProject) {
       setActiveProject(selectedProject);
     }
   }, [selectedProject]);
+
+  // ⏳ 3D Screen Loader UI
+  if (loading) {
+    return (
+      <div style={{ 
+        width: '900px', height: '600px', display: 'flex', flexDirection: 'column',
+        justifyContent: 'center', alignItems: 'center', background: 'rgba(5, 5, 13, 0.95)', 
+        borderRadius: '16px', fontFamily: 'monospace', color: '#00ffff' 
+      }}>
+        <div style={{ letterSpacing: '3px', marginBottom: '10px' }}>📥 FETCHING_MATRIX_DATA...</div>
+        <div style={{ fontSize: '0.8rem', color: '#ff00ff' }}>CONNECTING TO SUPABASE CORE</div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ 
@@ -218,14 +231,14 @@ export const LiquidCarousel = ({ isZoomed, setIsZoomed }) => {
       {/* CONTENT AREA */}
       <div style={{ background: 'rgba(255, 255, 255, 0.2)', position: 'relative', width: '100%', height: '100%', overflow: 'hidden' }}>
         
-        {/* 🖥️ CONTAINER 1: GRID VIEW (කොටු 3ම පේන වීව් එක - Handles animation forward and backward) */}
+        {/* 🖥️ CONTAINER 1: GRID VIEW */}
         <div style={{
           position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
           display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 40px', gap: '25px',
           opacity: selectedProject ? 0 : 1,
           transform: selectedProject ? 'translateY(-25px) scale(0.96)' : 'translateY(0) scale(1)',
           pointerEvents: selectedProject ? 'none' : 'auto',
-          transition: 'all 0.5s cubic-bezier(0.16, 1, 0.3, 1)' // Handles smooth reverse entry
+          transition: 'all 0.5s cubic-bezier(0.16, 1, 0.3, 1)'
         }}>
           {projectsData.map((project) => (
             <ProjectCard
@@ -242,20 +255,20 @@ export const LiquidCarousel = ({ isZoomed, setIsZoomed }) => {
           ))}
         </div>
 
-        {/* 💎 CONTAINER 2: SINGLE CASE STUDY VIEW (කාඩ් එකක් ඇතුලට යන සහ ආපහු එන වීව් එක - Fully animated both ways) */}
+        {/* 💎 CONTAINER 2: SINGLE CASE STUDY VIEW */}
         <div style={{
           position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
           padding: '40px', display: 'grid', gridTemplateColumns: '1.1fr 1fr', gap: '40px',
           opacity: selectedProject ? 1 : 0,
           transform: selectedProject ? 'translateY(0) scale(1)' : 'translateY(25px) scale(0.96)',
           pointerEvents: selectedProject ? 'auto' : 'none',
-          transition: 'all 0.5s cubic-bezier(0.16, 1, 0.3, 1)' // Handles smooth exit animation
+          transition: 'all 0.5s cubic-bezier(0.16, 1, 0.3, 1)'
         }}>
           <button 
             onClick={(e) => { 
               e.preventDefault();
               e.stopPropagation(); 
-              setSelectedProject(null); // Triggers the reverse animation perfectly
+              setSelectedProject(null);
             }}
             style={{ position: 'absolute', top: '20px', right: '20px', background: 'rgba(0,0,0,0.05)', color: '#1d1d1f', border: 'none', padding: '6px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: '700', zIndex: 110 }}
           >
@@ -263,25 +276,27 @@ export const LiquidCarousel = ({ isZoomed, setIsZoomed }) => {
           </button>
 
           {/* Left Panel: Video Showcase */}
-          <div style={{ background: activeProject.bgGradient, borderRadius: '20px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', position: 'relative', overflow: 'hidden', boxShadow: `inset 0 0 40px rgba(0,0,0,0.4)` }}>
-            <video
-              src={activeProject.videoSrc}
-              muted
-              autoPlay
-              loop
-              playsInline
-              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-            />
+          <div style={{ background: activeProject?.bgGradient || '#000', borderRadius: '20px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', position: 'relative', overflow: 'hidden', boxShadow: `inset 0 0 40px rgba(0,0,0,0.4)` }}>
+            {activeProject && (
+              <video
+                src={activeProject.videoSrc}
+                muted
+                autoPlay
+                loop
+                playsInline
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              />
+            )}
           </div>
 
           {/* Right Panel: Descriptions with Typewriter */}
           <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: '5px 0' }}>
             <div>
-              <h2 style={{ margin: '0 0 4px 0', fontSize: '2.2rem', color: '#1d1d1f', fontWeight: '800' }}>{activeProject.title}</h2>
-              <p style={{ margin: '0 0 20px 0', fontSize: '1.1rem', color: '#86868b', fontWeight: '500' }}>{activeProject.tagline}</p>
+              <h2 style={{ margin: '0 0 4px 0', fontSize: '2.2rem', color: '#1d1d1f', fontWeight: '800' }}>{activeProject?.title}</h2>
+              <p style={{ margin: '0 0 20px 0', fontSize: '1.1rem', color: '#86868b', fontWeight: '500' }}>{activeProject?.tagline}</p>
               
               <div style={{ display: 'flex', gap: '6px', marginBottom: '25px' }}>
-                {activeProject.tags.map(t => (
+                {activeProject?.tags.map(t => (
                   <span key={t} style={{ background: 'rgba(0,0,0,0.05)', padding: '5px 12px', borderRadius: '6px', fontSize: '0.75rem', color: '#1d1d1f', fontWeight: '600' }}>{t}</span>
                 ))}
               </div>
@@ -289,16 +304,16 @@ export const LiquidCarousel = ({ isZoomed, setIsZoomed }) => {
               <h4 style={{ margin: '0 0 8px 0', color: '#86868b', textTransform: 'uppercase', fontSize: '0.75rem', letterSpacing: '1px', fontWeight: '700' }}>Project Overview</h4>
               
               <p style={{ margin: 0, fontSize: '0.95rem', color: '#424245', lineHeight: '1.6', fontWeight: '500', minHeight: '140px' }}>
-                {selectedProject ? (
+                {selectedProject && activeProject ? (
                   <TypewriterText text={activeProject.summary} speed={12} />
                 ) : (
-                  <span>{activeProject.summary}</span>
+                  <span>{activeProject?.summary}</span>
                 )}
               </p>
             </div>
 
             <a 
-              href={activeProject.liveLink} 
+              href={activeProject?.liveLink} 
               target="_blank" 
               rel="noreferrer"
               style={{ background: '#1d1d1f', color: '#fff', textDecoration: 'none', padding: '16px 24px', borderRadius: '12px', textAlign: 'center', fontWeight: '700', fontSize: '1rem', display: 'block', boxShadow: '0 8px 20px rgba(0,0,0,0.15)' }}

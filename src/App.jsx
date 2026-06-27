@@ -6,12 +6,9 @@ import { CameraHandler } from './CameraHandler'
 import { LiquidCarousel } from './LiquidCarousel'
 import { TechCosmos } from './TechCosmos' 
 import ContactPortal from './ContactPortal' 
-// දැනට තියෙන Imports වලට යටින් මේක දාන්න:
 import { Model as SmartphoneModel } from './Smartphone'
-// දැනට තියෙන Imports වලට යටින් මේක දාන්න මචන්:
 import MobileProjectsUI from './MobileProjectsUI'
-
-
+import { supabase } from './supabaseClient'; // 👈 අපේ Supabase Client එක මෙතනටත් ඕනේ
 
 // ✍️ PROFILE CARD TYPEWRITER COMPONENT
 const ProfileTypewriter = ({ text, speed = 10, startTrigger }) => {
@@ -43,7 +40,7 @@ const ProfileTypewriter = ({ text, speed = 10, startTrigger }) => {
   return <span>{displayedText}</span>;
 };
 
-// 🌌 1. Interactive Warp Stars (🌟 UPDATED FOR AMBIENT DRIFT)
+// 🌌 1. Interactive Warp Stars
 function InteractiveStars({ activePage, isImploding }) { 
   const count = 3000;
   const pointsRef = useRef();
@@ -66,10 +63,8 @@ function InteractiveStars({ activePage, isImploding }) {
 
   useFrame((state) => {
     const posArray = pointsRef.current.geometry.attributes.position.array;
-    // ⏳ සයිට් එක රන් වෙන කාලය (Seconds) අල්ලගන්නවා මචන්
     const t = state.clock.getElapsedTime(); 
 
-    // 🌀 බ්ලැක් හෝල් ඇදීම සිදුවෙද්දී තරු මැද කේන්ද්‍රයට වේගයෙන් ඇදී යනවා
     if (isImploding) {
       for (let i = 0; i < count; i++) {
         const i3 = i * 3;
@@ -78,8 +73,6 @@ function InteractiveStars({ activePage, isImploding }) {
         posArray[i3 + 2] = THREE.MathUtils.lerp(posArray[i3 + 2], 0, 0.08);
       }
     } else {
-      // 🎇 AMBIENT DRIFT LOGIC: මවුස් ට්‍රැකින්ග් එකට අමතරව කාලය (t * 0.02) එකතු කරලා 
-      // ෆෝන් වලදීත් තරු ටික නිකන්ම හිමින් එහෙට මෙහෙට පාවෙන්න සැලැස්වීම මචන්
       const targetX = (state.pointer.x * Math.PI) / 4;
       const targetY = (-state.pointer.y * Math.PI) / 4;
       
@@ -133,9 +126,8 @@ function InteractiveStars({ activePage, isImploding }) {
   );
 }
 
-// 🤖 2. 3D AI Core (Modified for Black Hole Pull)
-// 135 වැනි පේළිය මේ විදිහට වෙනස් කරන්න:
-function SciFiAICore({ matrixEntered, activePage, isImploding, isMobile, debugValues }) { // 👈 debugValues එක එකතු කලා
+// 🤖 2. 3D AI Core
+function SciFiAICore({ matrixEntered, activePage, isImploding, isMobile }) { 
   const groupRef = useRef()
   const coreRef = useRef()
   const ring1Ref = useRef()
@@ -158,17 +150,12 @@ function SciFiAICore({ matrixEntered, activePage, isImploding, isMobile, debugVa
       groupRef.current.position.x = THREE.MathUtils.lerp(groupRef.current.position.x, 0, 0.1);
       groupRef.current.position.y = THREE.MathUtils.lerp(groupRef.current.position.y, 0, 0.1);
     } else if (matrixEntered) {
-      
-      // 🍏 SCREEN 1: PROFILE VIEW
       if (activePage === 1) {
         groupRef.current.position.x = THREE.MathUtils.lerp(groupRef.current.position.x, isMobile ? 0 : -2, 0.04);
         groupRef.current.position.y = THREE.MathUtils.lerp(groupRef.current.position.y, isMobile ? 1.5 : 0, 0.04);
-        groupRef.current.position.z = THREE.MathUtils.lerp(groupRef.current.position.z, 0, 0.04); // පේජ් 1 වලදී Z එක 0 මයි
+        groupRef.current.position.z = THREE.MathUtils.lerp(groupRef.current.position.z, 0, 0.04); 
         groupRef.current.scale.setScalar(THREE.MathUtils.lerp(groupRef.current.scale.x, isMobile ? 0.7 : 1, 0.05));
-      
-      // 🍏 SCREEN 2: PROJECTS VIEW (🌟 HARDCODED CINEMATIC MOBILE VALUES)
       } else if (activePage === 2) {
-        // උඹ ස්ලයිඩර් එකෙන් ටියුන් කරලා හොයාගත්ත සුපිරිම අගයන් ටික මචන්:
         const targetX = isMobile ? 0.8 : 2.8;
         const targetY = isMobile ? -1.35 : -1.5;
         const targetZ = isMobile ? -0.7 : 0;
@@ -178,12 +165,8 @@ function SciFiAICore({ matrixEntered, activePage, isImploding, isMobile, debugVa
         groupRef.current.position.y = THREE.MathUtils.lerp(groupRef.current.position.y, targetY, 0.04); 
         groupRef.current.position.z = THREE.MathUtils.lerp(groupRef.current.position.z, targetZ, 0.04); 
         groupRef.current.scale.setScalar(THREE.MathUtils.lerp(groupRef.current.scale.x, targetScale, 0.05));
-      
-      // 🍏 SCREEN 3: TECH STACK VIEW
       } else if (activePage === 3) {
         groupRef.current.scale.setScalar(THREE.MathUtils.lerp(groupRef.current.scale.x, 0, 0.08));
-      
-      // 🍏 SCREEN 4: CONTACT VIEW
       } else if (activePage === 4) {
         groupRef.current.position.x = THREE.MathUtils.lerp(groupRef.current.position.x, 0, 0.04);
         groupRef.current.position.y = THREE.MathUtils.lerp(groupRef.current.position.y, 1.2, 0.04);
@@ -216,7 +199,7 @@ function SciFiAICore({ matrixEntered, activePage, isImploding, isMobile, debugVa
   )
 }
 
-// 💻 3. Laptop Component (🌟 THE REAL FIX: Photorealistic Environment Reflections)
+// 💻 3. Laptop Component
 function LaptopComponent({ matrixEntered, activePage, setIsZoomed, isZoomed }) {
   const { scene } = useGLTF('/laptop.glb') 
   const groupRef = useRef()
@@ -224,12 +207,10 @@ function LaptopComponent({ matrixEntered, activePage, setIsZoomed, isZoomed }) {
   const htmlGroupRef = useRef()
 
   const htmlX = 3.56, htmlY = 1.55, htmlZ = 3.75;
-  const rotX = -0.18, rotY = -2.40, rotZ = -0.13;
+  const rotX = -0.20, rotY = -2.40, rotZ = -0.13;
   const htmlScale = 1.87;
   const lapRotO = [0.23, -0.85, -0.07]; 
   const lapRotZ = [0.06, 2.30, -0.51]; 
-
-  // 🚫 කිසිම මැටීරියල් Force Override කිරීමක් මෙතන නැහැ! ඔරිජිනල් ප්‍රිමියම් ලුක් එකමයි!
 
   useFrame(() => {
     if (!groupRef.current || !laptopModelRef.current || !htmlGroupRef.current) return;
@@ -263,11 +244,7 @@ function LaptopComponent({ matrixEntered, activePage, setIsZoomed, isZoomed }) {
   
   return (
     <group ref={groupRef} position={[-1, -30, 0.1]}>
-        
-        {/* 🌟 THE MAGIC: මේකෙන් ලැප් එකට නොපෙනෙන නගරයක (city) ආලෝකය සහ රිෆ්ලෙක්ෂන් දෙනවා */}
         <Environment preset="city" environmentIntensity={0.8} />
-
-        {/* කීබෝඩ් එක පැත්ත සියුම්ව එළිය කරන්න දාපු ලයිට් එක */}
         <directionalLight position={[0, 10, 5]} intensity={1.5} color="#ffffff" />
         <ambientLight intensity={0.6} />
 
@@ -286,20 +263,18 @@ function LaptopComponent({ matrixEntered, activePage, setIsZoomed, isZoomed }) {
   )
 }
 
-// 📱 3.5 Smartphone Component (🌟 FIXED FOR SMOOTH SLIDE-DOWN ON PROJECT OPEN)
-function SmartphoneComponent({ matrixEntered, activePage, onProjectSelect, selectedProject }) { // 👈 selectedProject එක ගත්තා මචන්
+// 📱 3.5 Smartphone Component
+function SmartphoneComponent({ matrixEntered, activePage, onProjectSelect, selectedProject }) { 
   const groupRef = useRef()
 
   useFrame(() => {
     if (!groupRef.current) return
 
-    // 🌟 2. FIXED: ප්‍රොජෙක්ට් එකක් ෆුල් ස්ක්‍රීන් ඕපන් වෙලා නම් 3D ෆෝන් එක ස්මූත් විදිහට පල්ලෙහාට බැහැලා හැංගෙනවා මචන්!
     if (selectedProject) {
       groupRef.current.position.x = THREE.MathUtils.lerp(groupRef.current.position.x, 0, 0.05)
-      groupRef.current.position.y = THREE.MathUtils.lerp(groupRef.current.position.y, -12, 0.05) // පල්ලෙහාට බැස්සුවා
+      groupRef.current.position.y = THREE.MathUtils.lerp(groupRef.current.position.y, -12, 0.05) 
       groupRef.current.position.z = THREE.MathUtils.lerp(groupRef.current.position.z, -5, 0.05)
     } 
-    // පරණ විදිහටම පේජ් 2 එකේදී මැදට එන ලොජික් එක
     else if (matrixEntered && activePage === 2) {
       groupRef.current.position.x = THREE.MathUtils.lerp(groupRef.current.position.x, 0, 0.05)
       groupRef.current.position.y = THREE.MathUtils.lerp(groupRef.current.position.y, -0.6, 0.05)
@@ -331,49 +306,51 @@ function SmartphoneComponent({ matrixEntered, activePage, onProjectSelect, selec
   )
 }
 
-// 🌌 FUTURISTIC MATRIX OS EXPERIENTIAL SWIPER OVERLAY (🌟 ULTRA SMOOTH CINEMATIC VERSION FIXED)
-function MatrixOSSwiper({ selectedProject, setSelectedProject, videoBlobs = {} }) {
+// 🌌 FUTURISTIC MATRIX OS EXPERIENTIAL SWIPER OVERLAY (🌟 DYNAMICALLY UPDATED FOR SUPABASE)
+function MatrixOSSwiper({ selectedProject, setSelectedProject }) {
   const [videoLoading, setVideoLoading] = useState(false);
+  const [mobileProjects, setMobileProjects] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const mobileProjects = [
-    { 
-      id: 1, 
-      title: '3D Bottle Animation', 
-      desc: 'Immersive liquid simulation project.', 
-      video: videoBlobs?.[1] || '/videos/bottle-hover.mp4', 
-      tech: 'React Three Fiber',
-      url: 'https://bottle-animation-omega.vercel.app'
-    },
-    { 
-      id: 2, 
-      title: 'E-Commerce Platform', 
-      desc: 'Next-gen online shopping engine.', 
-      video: videoBlobs?.[2] || '/videos/ecommerce-hover.mp4', 
-      tech: 'Laravel & React',
-      url: 'https://e-commerce-ai-admin-4e6v.bolt.host'
-    },
-    { 
-      id: 3, 
-      title: 'Travel Experience', 
-      desc: 'Cinematic travel portal interface.', 
-      video: videoBlobs?.[3] || '/videos/travel-hover.mp4', 
-      tech: 'Three.js & WebGL',
-      url: 'https://ai-travel-itinerary-6qzi.bolt.host/'
-    }
-  ];
+  // 📥 Live fetch project data specifically for mobile view routing
+  useEffect(() => {
+    const fetchMobileData = async () => {
+      const { data, error } = await supabase
+        .from('projects')
+        .select('*')
+        .order('id', { ascending: true });
+
+      if (data) {
+        const mapped = data.map(p => ({
+          id: p.id,
+          title: p.title,
+          desc: p.summary ? p.summary.substring(0, 150) + "..." : "",
+          video: p.video_path,
+          tech: p.tags && p.tags.length > 0 ? p.tags[0] : 'React Tech',
+          url: p.live_link
+        }));
+        setMobileProjects(mapped);
+      }
+      setLoading(false);
+    };
+    fetchMobileData();
+  }, []);
+
+  if (loading || mobileProjects.length === 0) return null;
 
   const currentIndex = mobileProjects.findIndex(p => p.id === selectedProject.id);
-  const currentProjectUrl = mobileProjects[currentIndex]?.url || '#';
+  const validIndex = currentIndex !== -1 ? currentIndex : 0; 
+  const currentProjectUrl = mobileProjects[validIndex]?.url || '#';
 
   const handleNext = (e) => {
     e.stopPropagation();
-    const nextIndex = (currentIndex + 1) % mobileProjects.length;
+    const nextIndex = (validIndex + 1) % mobileProjects.length;
     setSelectedProject(mobileProjects[nextIndex]);
   };
 
   const handlePrev = (e) => {
     e.stopPropagation();
-    const prevIndex = (currentIndex - 1 + mobileProjects.length) % mobileProjects.length;
+    const prevIndex = (validIndex - 1 + mobileProjects.length) % mobileProjects.length;
     setSelectedProject(mobileProjects[prevIndex]);
   };
 
@@ -384,32 +361,17 @@ function MatrixOSSwiper({ selectedProject, setSelectedProject, videoBlobs = {} }
         position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
         backgroundColor: '#05050d', zIndex: 999999, display: 'flex', flexDirection: 'column',
         fontFamily: 'system-ui, sans-serif', color: '#fff', pointerEvents: 'auto',
-        // 🌟 FIXED: ඇස් වලට මාරම සනීපෙට එන Ultra Smooth Cinematic Timing Curve එක මචන්
         animation: 'matrixGlitchIn 0.45s cubic-bezier(0.16, 1, 0.3, 1) both' 
       }}
     >
       <style>{`
-        /* 🌟 CLEAN & PREMIUM CINEMATIC GLASS DISSOLVE EFFECT (NO EYE STRAIN) */
         @keyframes matrixGlitchIn {
-          0% { 
-            opacity: 0; 
-            filter: blur(15px) brightness(0.6) contrast(1.1); 
-            transform: scale(0.96); 
-          }
-          30% {
-            opacity: 0.4;
-            filter: blur(10px) brightness(1.1) contrast(1);
-          }
-          100% { 
-            opacity: 1; 
-            filter: blur(0px) brightness(1) contrast(1); 
-            transform: scale(1); 
-          }
+          0% { opacity: 0; filter: blur(15px) brightness(0.6) transform: scale(0.96); }
+          100% { opacity: 1; filter: blur(0px) brightness(1) transform: scale(1); }
         }
         @keyframes lucidPulse {
-          0% { box-shadow: 0 0 15px rgba(0, 255, 255, 0.4), inset 0 0 5px rgba(0, 255, 255, 0.2); }
-          50% { box-shadow: 0 0 30px rgba(0, 255, 255, 0.85), inset 0 0 12px rgba(0, 255, 255, 0.4); filter: brightness(1.1); }
-          100% { box-shadow: 0 0 15px rgba(0, 255, 255, 0.4), inset 0 0 5px rgba(0, 255, 255, 0.2); }
+          0%, 100% { box-shadow: 0 0 15px rgba(0, 255, 255, 0.4), inset 0 0 5px rgba(0, 255, 255, 0.2); }
+          50% { box-shadow: 0 0 30px rgba(0, 255, 255, 0.85), inset 0 0 12px rgba(0, 255, 255, 0.4); }
         }
         @keyframes cyberPulse {
           0%, 100% { opacity: 0.4; }
@@ -424,7 +386,6 @@ function MatrixOSSwiper({ selectedProject, setSelectedProject, videoBlobs = {} }
       {/* 📸 Project Header LIVE VIDEO Panel */}
       <div style={{ position: 'relative', width: '100%', height: '38vh', overflow: 'hidden', background: '#05050d' }}>
         
-        {/* ⏳ SCI-FI LOADING BUFFER OVERLAY */}
         {videoLoading && (
           <div style={{
             position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
@@ -440,10 +401,9 @@ function MatrixOSSwiper({ selectedProject, setSelectedProject, videoBlobs = {} }
           </div>
         )}
 
-        {/* 📼 LIVE BACKGROUND VIDEO */}
         <video 
-          key={mobileProjects[currentIndex].video}
-          src={mobileProjects[currentIndex].video}
+          key={mobileProjects[validIndex].video}
+          src={mobileProjects[validIndex].video}
           autoPlay 
           loop 
           muted 
@@ -454,14 +414,12 @@ function MatrixOSSwiper({ selectedProject, setSelectedProject, videoBlobs = {} }
           style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.8 }}
         />
 
-        {/* Cyber CRT Scanline Overlay */}
         <div style={{
           position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
           background: 'linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06))',
           backgroundSize: '100% 4px, 6px 100%', pointerEvents: 'none', zIndex: 2
         }} />
 
-        {/* Top Strip */}
         <div style={{
           position: 'absolute', top: 0, left: 0, width: '100%', height: '70px',
           background: 'linear-gradient(to bottom, rgba(5,5,13,0.95), transparent)',
@@ -484,11 +442,10 @@ function MatrixOSSwiper({ selectedProject, setSelectedProject, videoBlobs = {} }
             padding: '4px 12px', borderRadius: '8px', border: '1px solid rgba(255,0,255,0.3)',
             fontSize: '11px', letterSpacing: '1px', fontWeight: 'bold'
           }}>
-            SYSTEM_OS // 0{currentIndex + 1}
+            SYSTEM_OS // 0{validIndex + 1}
           </div>
         </div>
 
-        {/* FLOATING NAV SWIPERS */}
         <div style={{ position: 'absolute', bottom: '15px', right: '20px', display: 'flex', gap: '10px', zIndex: 6 }}>
           <button onClick={handlePrev} style={{ width: '42px', height: '42px', borderRadius: '50%', background: 'rgba(2,2,5,0.9)', border: '1px solid rgba(255,255,255,0.15)', color: '#fff', fontSize: '16px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(5px)' }}>‹</button>
           <button onClick={handleNext} style={{ width: '42px', height: '42px', borderRadius: '50%', background: 'rgba(2,2,5,0.9)', border: '1px solid #00ffff', color: '#00ffff', fontSize: '16px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(5px)', boxShadow: '0 0 15px rgba(0,255,255,0.3)' }}>›</button>
@@ -499,21 +456,16 @@ function MatrixOSSwiper({ selectedProject, setSelectedProject, videoBlobs = {} }
       <div style={{ padding: '30px 24px', flex: 1, background: 'linear-gradient(to bottom, #090914, #020205)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
         <div>
           <span style={{ fontSize: '10px', background: 'rgba(0, 255, 255, 0.12)', color: '#00ffff', padding: '5px 12px', borderRadius: '12px', border: '1px solid rgba(0, 255, 255, 0.3)', fontWeight: 'bold', letterSpacing: '0.5px' }}>
-            {selectedProject.tech}
+            {mobileProjects[validIndex].tech}
           </span>
           <h2 style={{ margin: '18px 0 12px 0', fontSize: '1.7rem', color: '#fff', textShadow: '0 0 15px rgba(0,255,255,0.25)', letterSpacing: '0.5px', textTransform: 'uppercase', fontFamily: 'monospace' }}>
-            {selectedProject.title}
+            {mobileProjects[validIndex].title}
           </h2>
           <p style={{ margin: '0', color: '#ccc', fontSize: '0.92rem', lineHeight: '1.6', fontFamily: 'system-ui' }}>
-            <ProfileTypewriter 
-              text={`${selectedProject.desc} This deployment environment coordinates fluid micro-interactions and low-latency frontend modules configured natively inside the Matrix system pipeline.`}
-              speed={8}
-              startTrigger={true}
-            />
+            {mobileProjects[validIndex].desc}
           </p>
         </div>
         
-        {/* 🚀 PREMIUM GLASSMORPHIC LUCID STYLE LAUNCH BUTTON WITH REDIRECTION */}
         <button 
           onClick={(e) => {
             e.stopPropagation();
@@ -522,21 +474,12 @@ function MatrixOSSwiper({ selectedProject, setSelectedProject, videoBlobs = {} }
             }
           }}
           style={{
-            width: '100%', 
-            padding: '15px', 
+            width: '100%', padding: '15px', 
             background: 'linear-gradient(135deg, rgba(0, 255, 255, 0.15) 0%, rgba(0, 188, 188, 0.05) 100%)', 
-            backdropFilter: 'blur(12px)',
-            color: '#00ffff', 
-            border: '1px solid rgba(0, 255, 255, 0.4)', 
-            borderRadius: '14px', 
-            fontWeight: 'bold', 
-            letterSpacing: '2px', 
-            cursor: 'pointer', 
-            fontSize: '0.95rem', 
-            textTransform: 'uppercase',
-            animation: 'lucidPulse 2.5s infinite ease-in-out',
-            transition: 'all 0.3s ease',
-            marginBottom: '15px'
+            backdropFilter: 'blur(12px)', color: '#00ffff', border: '1px solid rgba(0, 255, 255, 0.4)', 
+            borderRadius: '14px', fontWeight: 'bold', letterSpacing: '2px', cursor: 'pointer', 
+            fontSize: '0.95rem', textTransform: 'uppercase', animation: 'lucidPulse 2.5s infinite ease-in-out',
+            transition: 'all 0.3s ease', marginBottom: '15px'
           }}
         >
           LAUNCH LIVE APP 🚀
@@ -546,7 +489,7 @@ function MatrixOSSwiper({ selectedProject, setSelectedProject, videoBlobs = {} }
   );
 }
 
-// 🏛️ 4. MAIN APP COMPONENT (🌟 FIXED: GLOBAL MOBILE SWIPE ADDED)
+// 🏛️ 4. MAIN APP COMPONENT
 function App() {
   const [isHovered, setIsHovered] = useState(false);
   const [matrixEntered, setMatrixEntered] = useState(false);
@@ -557,45 +500,19 @@ function App() {
   
   const [activePage, setActivePage] = useState(1);
   const [selectedProject, setSelectedProject] = useState(null);
-  
-  // 🌟 ස්ටේට්ස් දෙකම නූලටම මෙතන තියෙනවා මචන්, දැන් කවදාවත් නොට් ඩිෆයින්ඩ් එන්නේ නැහැ!
   const [isMobile, setIsMobile] = useState(false);
-  const [videoBlobs, setVideoBlobs] = useState({});
 
-  // 📥 1. MULTI-STREAM BLOB VIDEO PRELOAD EFFECT
+  // 📱 MOBILE RESPONSIVE DETECTION EFFECT
   useEffect(() => {
-    const targets = [
-      { id: 1, path: '/videos/bottle-hover.mp4' },
-      { id: 2, path: '/videos/ecommerce-hover.mp4' },
-      { id: 3, path: '/videos/travel-hover.mp4' }
-    ];
-    
-    // සයිට් එක ලෝඩ් වෙද්දීම වීඩියෝ 3ම RAM එකට ඇදලා බ්ලොබ් යූආර්එල් (Blob URL) හදනවා මචන්
-    targets.forEach(async (item) => {
-      try {
-        const response = await fetch(item.path);
-        const blob = await response.blob();
-        const objectUrl = URL.createObjectURL(blob);
-        setVideoBlobs(prev => ({ ...prev, [item.id]: objectUrl }));
-      } catch (error) {
-        console.error("Matrix OS Video Stream Buffering Failed:", error);
-      }
-    });
-  }, []);
-
-  // 📱 2. MOBILE RESPONSIVE DETECTION EFFECT
-  useEffect(() => {
-    // බ්‍රවුසර් එකේ පළල 768px වඩා අඩුද කියලා නිරන්තරයෙන්ම චෙක් කරනවා මචන්
     const handleResize = () => {
       setIsMobile(window.innerWidth < 768);
     };
-    
-    handleResize(); // මුලින්ම එක පාරක් රන් කරනවා
+    handleResize(); 
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // 🚀 3. 100% BULLETPROOF MOBILE SWIPE LISTENER (🌟 FIXED)
+  // 🚀 BULLETPROOF MOBILE SWIPE LISTENER
   useEffect(() => {
     let startY = 0;
 
@@ -609,18 +526,14 @@ function App() {
       const endY = e.changedTouches[0].clientY;
       const deltaY = startY - endY;
 
-      // 40px කට වඩා ඇද්දා නම් විතරක් පේජ් මාරු වෙනවා (ස්මූත් වෙන්න 40 කලා)
       if (deltaY > 40) {
-        // Swipe Up (Scroll Down)
         setActivePage((prev) => Math.min(prev + 1, 4));
         setIsAboutExpanded(false);
       } else if (deltaY < -40) {
-        // Swipe Down (Scroll Up)
         setActivePage((prev) => Math.max(prev - 1, 1));
       }
     };
 
-    // මුළු Window එකටම ඉවෙන්ට් එක දානවා (Canvas එකෙන් බ්ලොක් කරත් මේක වැඩ)
     window.addEventListener('touchstart', handleGlobalTouchStart, { passive: true });
     window.addEventListener('touchend', handleGlobalTouchEnd, { passive: true });
 
@@ -630,7 +543,6 @@ function App() {
     };
   }, [matrixEntered, isZoomed, isImploding]);
 
-  // 🖱️ 4. PC MOUSE WHEEL SCROLL LOGIC
   const handleScroll = (e) => {
     if (!matrixEntered || isZoomed || isImploding) return; 
     if (e.deltaY > 20) {
@@ -641,10 +553,8 @@ function App() {
     }
   };
 
-  // 🕳️ Cinematic Black-Hole Trigger Execution
   const triggerMatrixEntry = () => {
     setIsImploding(true); 
-    
     setTimeout(() => {
       setMatrixEntered(true);
       setActivePage(1);
@@ -657,21 +567,13 @@ function App() {
       onWheel={handleScroll} 
       style={{ position: 'relative', width: '100vw', height: '100vh', backgroundColor: '#020205', overflow: 'hidden' }}
     >
-      
-      {/* 🌌 3D WEBGL GRAPHICS CANVAS */}
       <Canvas camera={{ position: [0, 0, 6], fov: 45 }}>
         <CameraHandler matrixEntered={matrixEntered} showProjects={activePage === 2} isZoomed={isZoomed} /> 
         <ambientLight intensity={0.5} />
         <Suspense fallback={null}>
           <InteractiveStars activePage={activePage} isImploding={isImploding} /> 
-          <SciFiAICore 
-             matrixEntered={matrixEntered} 
-             activePage={activePage} 
-             isImploding={isImploding} 
-             isMobile={isMobile} 
-          />
+          <SciFiAICore matrixEntered={matrixEntered} activePage={activePage} isImploding={isImploding} isMobile={isMobile} />
           
-          {/* 📱 2. CONDITIONAL RENDERING SWITCH */}
           {isMobile ? (
             <SmartphoneComponent matrixEntered={matrixEntered} activePage={activePage} onProjectSelect={setSelectedProject} selectedProject={selectedProject} />
           ) : (
@@ -683,9 +585,7 @@ function App() {
         </Suspense>
       </Canvas>
 
-      {/* =========================================================================
-          平面 UI OVERLAYS LAYER (2D LAYER)
-          ========================================================================= */}
+      {/* 平面 UI OVERLAYS LAYER */}
       <div style={{
         position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
         pointerEvents: 'none', display: 'flex', flexDirection: 'column',
@@ -749,7 +649,6 @@ function App() {
               cursor: 'pointer', transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)', width: '100%'
             }}
           >
-            {/* 📸 PROFILE IMAGE */}
             <div style={{
               width: isMobile ? '160px' : '260px', 
               height: isMobile ? '160px' : '260px', 
@@ -767,19 +666,14 @@ function App() {
               transform: isAboutExpanded ? 'translateY(0)' : 'translateY(-20px)',
               transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)', overflow: 'hidden', textAlign: 'center'
             }}>
-              {/* 🏷️ NAME TEXT */}
               <h2 style={{ 
-                color: '#00ffff', 
-                fontSize: isMobile ? '1.8rem' : '2.5rem', 
-                margin: '0 0 10px 0', 
+                color: '#00ffff', fontSize: isMobile ? '1.8rem' : '2.5rem', margin: '0 0 10px 0', 
                 letterSpacing: '3px', fontFamily: 'monospace', textShadow: '0 0 15px rgba(0, 255, 255, 0.5)' 
               }}>
                 Arjun Sudarshana
               </h2>
-              {/* 📝 DESCRIPTION TEXT */}
               <p style={{ 
-                margin: '0 10px', opacity: 0.9, 
-                fontSize: isMobile ? '0.95rem' : '1.1rem', 
+                margin: '0 10px', opacity: 0.9, fontSize: isMobile ? '0.95rem' : '1.1rem', 
                 lineHeight: '1.6', color: '#e0e0e0', maxWidth: '450px', fontFamily: 'system-ui' 
               }}>
                 <ProfileTypewriter 
@@ -791,10 +685,8 @@ function App() {
             </div>
           </div>
           
-          {/* 🔽 SCROLL HELP LABEL */}
           <p style={{ 
-            marginTop: isMobile ? '25px' : '50px', 
-            fontSize: isMobile ? '0.8rem' : '0.9rem', 
+            marginTop: isMobile ? '25px' : '50px', fontSize: isMobile ? '0.8rem' : '0.9rem', 
             color: '#00ffff', letterSpacing: '2px', opacity: 0.6, fontFamily: 'monospace' 
           }}>
             SCROLL DOWN FOR PROJECTS (v)
@@ -832,16 +724,7 @@ function App() {
         
         {/* 🌟 TRUE VIEWPORT CINEMATIC MATRIX_OS SMART SWIPER */}
         {selectedProject && (
-          <MatrixOSSwiper selectedProject={selectedProject} setSelectedProject={setSelectedProject} videoBlobs={videoBlobs} />
-        )}
-
-        {/* 📥 SILENT BACKGROUND VIDEO PRELOADER */}
-        {matrixEntered && (
-          <div style={{ display: 'none' }} aria-hidden="true">
-            <video preload="auto" muted playsInline><source src="/videos/bottle-hover.mp4" type="video/mp4" /></video>
-            <video preload="auto" muted playsInline><source src="/videos/ecommerce-hover.mp4" type="video/mp4" /></video>
-            <video preload="auto" muted playsInline><source src="/videos/travel-hover.mp4" type="video/mp4" /></video>
-          </div>
+          <MatrixOSSwiper selectedProject={selectedProject} setSelectedProject={setSelectedProject} />
         )}
         
       </div>

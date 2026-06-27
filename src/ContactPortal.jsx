@@ -81,7 +81,6 @@ const CyberFloatingOrb = ({ name, color, position, url, label, isMobileView, chi
         <meshBasicMaterial />
       </mesh>
 
-      {/* 🌟 100% FIX: මොබයිල් එකේදී අයිකන් වල 3D Mesh Scale එක තවත් සියුම්ව 0.62 දක්වා podi කලා මචන් */}
       <mesh scale={isHovered ? [1.3, 1.3, 1.3] : (isMobileView ? [0.62, 0.62, 0.62] : [1, 1, 1])}>
         <sphereGeometry args={[0.22, 32, 32]} />
         <meshStandardMaterial 
@@ -100,7 +99,6 @@ const CyberFloatingOrb = ({ name, color, position, url, label, isMobileView, chi
         <meshBasicMaterial color={color} wireframe transparent opacity={0.25} />
       </mesh>
 
-      {/* 🌟 HTML SVG Icon Wrapper: මොබයිල් එකේදී scale(0.78) කලා නූලටම මැච් වෙන්න */}
       <Html center distanceFactor={6} style={{ pointerEvents: 'none' }}>
         <div style={{
           width: '32px', height: '32px', display: 'flex', justifyContent: 'center', alignItems: 'center',
@@ -157,20 +155,47 @@ export const ContactPortal = ({ activePage }) => {
     setFormState(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleFormSubmit = (e) => {
-    e.preventDefault();
-    if (!formState.name || !formState.email || !formState.message) return;
+  // 📡 DYNAMIC TRANSMISSION HUB (FORM TAG COMPONENT REMOVED FOR MOBILE SAFETY)
+  const handleFormSubmit = async () => {
+    // 🚨 Manual Input Validation Check (HTML required එක වෙනුවට සයිබර් විදියට චෙක් කරනවා මචන්)
+    if (!formState.name || !formState.email || !formState.message) {
+      setTransmissionStatus('EMPTY_FIELDS');
+      setTimeout(() => setTransmissionStatus('READY'), 2500);
+      return;
+    }
 
     setTransmissionStatus('TRANSMITTING');
     setBurstData({ pos: [2.4, 0, 0], color: '#ff007f' });
 
-    setTimeout(() => {
-      setTransmissionStatus('SUCCESS');
+    const formData = new FormData();
+    formData.append("access_key", "6b41addc-bc23-469f-8381-38b40bca4d0c"); 
+    formData.append("name", formState.name);
+    formData.append("email", formState.email);
+    formData.append("message", formState.message);
+
+    try {
+      const response = await fetch("https://api.web3forms.com/submit", {
+        method: "POST",
+        body: formData
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setTransmissionStatus('SUCCESS');
+        setBurstData(null);
+        setFormState({ name: '', email: '', message: '' });
+        setTimeout(() => setTransmissionStatus('READY'), 4000);
+      } else {
+        console.error("API Rejected:", data);
+        setTransmissionStatus('READY');
+        setBurstData(null);
+      }
+    } catch (error) {
+      console.error("Pipeline Interrupted:", error);
+      setTransmissionStatus('READY');
       setBurstData(null);
-      setFormState({ name: '', email: '', message: '' });
-      
-      setTimeout(() => setTransmissionStatus('READY'), 4000);
-    }, 2000);
+    }
   };
 
   return (
@@ -222,43 +247,24 @@ export const ContactPortal = ({ activePage }) => {
             background: rgba(255, 255, 255, 0.08) !important;
           }
 
-          /* 🌌 100% SAFE RESPONSIVE MOBILE OVERRIDES */
           @media (max-width: 768px) {
             .contact-card-container { 
               width: 290px !important; 
               max-width: 90vw !important;
               position: absolute !important;
               left: 50% !important;
-              
-              /* 🌟 100% FIX: අයිකන් ටික පහලට ආපු නිසා කාඩ් එක තවත් නූලට බැලන්ස් වෙන්න top: 58% කලා මචන් */
               top: 58% !important; 
               transform: translate(-50%, -58%) scale(0.85) !important; 
-              
               padding: 20px !important; 
               background: rgba(10, 10, 14, 0.75) !important; 
               backdrop-filter: blur(14px) !important;
               box-shadow: 0 20px 40px rgba(0, 255, 255, 0.15) !important;
             }
-            .contact-card-container h2 {
-              font-size: 1.45rem !important;
-              margin-bottom: 4px !important;
-            }
-            .contact-card-container p {
-              font-size: 0.76rem !important;
-              line-height: 1.4 !important;
-              margin-bottom: 12px !important;
-            }
-            .contact-card-container .cyber-input {
-              padding: 10px 14px 10px 30px !important;
-              font-size: 0.82rem !important;
-            }
-            .contact-card-container form {
-              gap: 10px !important;
-            }
-            .contact-card-container button {
-              padding: 12px !important;
-              font-size: 0.82rem !important;
-            }
+            .contact-card-container h2 { font-size: 1.45rem !important; margin-bottom: 4px !important; }
+            .contact-card-container p { font-size: 0.76rem !important; line-height: 1.4 !important; margin-bottom: 12px !important; }
+            .contact-card-container .cyber-input { padding: 10px 14px 10px 30px !important; font-size: 0.82rem !important; }
+            .contact-card-container .cyber-panel-form { gap: 10px !important; }
+            .contact-card-container button { padding: 12px !important; font-size: 0.82rem !important; }
           }
         `}</style>
       </Html>
@@ -267,24 +273,16 @@ export const ContactPortal = ({ activePage }) => {
       <Html fullscreen style={{ pointerEvents: 'none' }}>
         <div 
           className="contact-card-container" 
+          onClick={(e) => e.stopPropagation()}
+          onPointerDown={(e) => e.stopPropagation()}
+          onPointerUp={(e) => e.stopPropagation()}
           style={{
-            position: 'absolute', 
-            left: '6%', 
-            top: '50%', 
-            transform: 'translateY(-50%)', 
-            width: '460px', 
-            pointerEvents: 'auto', 
-            background: 'rgba(10, 10, 14, 0.45)', 
-            backdropFilter: 'blur(20px)', 
-            border: '1px solid rgba(255, 255, 255, 0.08)', 
-            borderRadius: '28px', 
-            padding: '40px', 
-            color: '#ffffff', 
+            position: 'absolute', left: '6%', top: '50%', transform: 'translateY(-50%)', 
+            width: '460px', pointerEvents: 'auto', background: 'rgba(10, 10, 14, 0.45)', 
+            backdropFilter: 'blur(20px)', border: '1px solid rgba(255, 255, 255, 0.08)', 
+            borderRadius: '28px', padding: '40px', color: '#ffffff', 
             boxShadow: '0 40px 80px -20px rgba(0,0,0,0.7), 0 0 50px rgba(0, 255, 204, 0.03)',
-            display: 'flex', 
-            flexDirection: 'column', 
-            textAlign: 'left',
-            fontFamily: 'monospace'
+            display: 'flex', flexDirection: 'column', textAlign: 'left', fontFamily: 'monospace'
           }}
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '15px' }}>
@@ -303,7 +301,8 @@ export const ContactPortal = ({ activePage }) => {
             Initialize a high-speed data transmission below to deploy industry-grade interactive systems for your brand.
           </p>
 
-          <form onSubmit={handleFormSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+          {/* 🚨 THE REAL FIX: <form> ටැග් එක සම්පූර්ණයෙන්ම <div> එකක් බවට හැරෙව්වා මචන් (No more native mobile reloads!) */}
+          <div className="cyber-panel-form" style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
             <div className="cyber-field-wrapper">
               <span className="cyber-prompt-arrow">&gt;</span>
               <input 
@@ -313,7 +312,7 @@ export const ContactPortal = ({ activePage }) => {
                 className="cyber-input"
                 value={formState.name}
                 onChange={handleInputChange}
-                disabled={transmissionStatus !== 'READY'}
+                disabled={transmissionStatus === 'TRANSMITTING'}
               />
             </div>
             
@@ -326,7 +325,7 @@ export const ContactPortal = ({ activePage }) => {
                 className="cyber-input"
                 value={formState.email}
                 onChange={handleInputChange}
-                disabled={transmissionStatus !== 'READY'}
+                disabled={transmissionStatus === 'TRANSMITTING'}
               />
             </div>
             
@@ -340,29 +339,26 @@ export const ContactPortal = ({ activePage }) => {
                 style={{ resize: 'none' }}
                 value={formState.message}
                 onChange={handleInputChange}
-                disabled={transmissionStatus !== 'READY'}
+                disabled={transmissionStatus === 'TRANSMITTING'}
               />
             </div>
 
+            {/* 🚀 CUSTOM ACTION TRIGGER BUTTON (Changed type to 'button' with onClick wrapper) */}
             <button 
-              type="submit"
-              disabled={transmissionStatus !== 'READY'}
+              type="button"
+              onClick={handleFormSubmit}
+              disabled={transmissionStatus === 'TRANSMITTING'}
               style={{
-                background: transmissionStatus === 'SUCCESS' ? '#00ffcc' : (transmissionStatus === 'TRANSMITTING' ? '#3f3f46' : '#ff007f'),
+                background: transmissionStatus === 'SUCCESS' ? '#00ffcc' : (transmissionStatus === 'TRANSMITTING' ? '#3f3f46' : (transmissionStatus === 'EMPTY_FIELDS' ? '#ef4444' : '#ff007f')),
                 color: transmissionStatus === 'SUCCESS' ? '#0a0a0c' : '#ffffff',
-                border: 'none',
-                borderRadius: '14px',
-                padding: '16px',
-                fontSize: '0.9rem',
-                fontWeight: 'bold',
-                cursor: transmissionStatus === 'READY' ? 'pointer' : 'not-allowed',
+                border: 'none', borderRadius: '14px', padding: '16px', fontSize: '0.9rem', fontWeight: 'bold',
+                cursor: transmissionStatus !== 'TRANSMITTING' ? 'pointer' : 'not-allowed',
                 boxShadow: transmissionStatus === 'READY' ? '0 0 20px rgba(255, 0, 127, 0.4)' : 'none',
-                transition: 'all 0.3s ease',
-                letterSpacing: '1.5px',
-                marginTop: '10px'
+                transition: 'all 0.3s ease', letterSpacing: '1.5px', marginTop: '10px'
               }}
             >
               {transmissionStatus === 'READY' && 'LAUNCH TRANSMISSION ↗'}
+              {transmissionStatus === 'EMPTY_FIELDS' && '⚠️ PROTOCOL ERROR: FILL ALL FIELDS'}
               {transmissionStatus === 'TRANSMITTING' && 'SYNCHRONIZING SECURE CHANNELS...'}
               {transmissionStatus === 'SUCCESS' && 'TRANSMISSION SUCCESSFUL ✓'}
             </button>
@@ -399,7 +395,7 @@ export const ContactPortal = ({ activePage }) => {
                 [ FIVERR ]
               </button>
             </div>
-          </form>
+          </div>
 
           <div style={{ marginTop: '35px', display: 'flex', flexDirection: 'column', gap: '4px', opacity: 0.5, fontSize: '0.75rem' }}>
             <span>SECURE MAIL // arjunsudarshana@gmail.com</span>
@@ -414,7 +410,7 @@ export const ContactPortal = ({ activePage }) => {
         {/* ORB 1: FIVERR NODE */}
         <CyberFloatingOrb 
           name="fiverr" color="#1dbf73" 
-          position={isMobileView ? [-0.85, 1.85, 0] : [0, 1.4, 0]} // 🌟 FIXED: Y අගය 1.85 ට බස්සා පට්ටම ලස්සනට සර්වසම කලා මචන්
+          position={isMobileView ? [-0.85, 1.85, 0] : [0, 1.4, 0]} 
           url="https://www.fiverr.com/s/WE5mYzl" label="FIVERR ENGINE // 🟢" isMobileView={isMobileView}
         >
           <svg viewBox="0 0 24 24" fill="#ffffff" width="22" height="22">

@@ -1,13 +1,54 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react';
+import { supabase } from './supabaseClient'; // 👈 අපේ Supabase Client එක මෙතනට සම්බන්ධ කලා
 
 // 📱 MOBILE APP UI COMPONENT (🌟 100% CLEAN PREMIUM ANIMATED VERSION)
 export default function MobileProjectsUI({ onProjectSelect }) {
+  const [projects, setProjects] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const projects = [
-    { id: 1, title: '3D Bottle Animation', desc: 'Immersive liquid simulation project.', img: '/images/bottle-mockup.jpg', tech: 'React Three Fiber' },
-    { id: 2, title: 'E-Commerce Platform', desc: 'Next-gen online shopping engine.', img: '/images/ecommerce-mockup.jpg', tech: 'Laravel & React' },
-    { id: 3, title: 'Travel Experience', desc: 'Cinematic travel portal interface.', img: '/images/travel-mockup.jpg', tech: 'Three.js & WebGL' }
-  ];
+  // 📥 Supabase Cloud එකෙන් සජීවීව ප්‍රොජෙක්ට්ස් ඇසට්ස් ටික ලබා ගැනීම
+  useEffect(() => {
+    const fetchMobileUIProjects = async () => {
+      const { data, error } = await supabase
+        .from('projects')
+        .select('*')
+        .order('id', { ascending: true });
+
+      if (error) {
+        console.error("Error loading smartphone items:", error);
+      } else if (data) {
+        // 🔄 ඩේටාබේස් fields ටික ඔයාගේ ඔරිජිනල් UI ලූප් එකේ ප්‍රොපටීස් වලට මැප් කිරීම
+        const mappedData = data.map(p => ({
+          id: p.id,
+          title: p.title,
+          desc: p.summary ? (p.summary.length > 85 ? p.summary.substring(0, 85) + "..." : p.summary) : '',
+          img: p.image_path,
+          tech: p.tags && p.tags.length > 0 ? p.tags.join(' & ') : 'WebGL Dev',
+          // 3D Swiper එකට අත්‍යවශ්‍ය වන අමතර ලිංක්ස්
+          video: p.video_path,
+          url: p.live_link
+        }));
+        setProjects(mappedData);
+      }
+      setLoading(false);
+    };
+
+    fetchMobileUIProjects();
+  }, []);
+
+  // ⏳ ෆෝන් එක ඇතුලත පේන කුඩා ස්මාර්ට් ලෝඩර් එක
+  if (loading) {
+    return (
+      <div style={{
+        width: '320px', height: '620px', backgroundColor: '#05050d',
+        borderRadius: '36px', overflow: 'hidden', border: '6px solid #111',
+        display: 'flex', flexDirection: 'column', justifyContent: 'center',
+        alignItems: 'center', fontFamily: 'monospace', color: '#00ffff'
+      }}>
+        <div style={{ fontSize: '12px', letterSpacing: '2px', animation: 'pulse 1s infinite' }}>📥 PORTFOLIO_OS...</div>
+      </div>
+    );
+  }
 
   return (
     <div style={{
